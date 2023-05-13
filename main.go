@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/vaults-dev/vaults-backend/controllers"
 	"github.com/vaults-dev/vaults-backend/initializers"
@@ -14,6 +15,12 @@ func init() {
 
 func main() {
 	r := gin.Default()
+
+	r.Use(cors.New(
+		cors.Config{
+			AllowAllOrigins: true,
+			// AllowMethods: []string{"POST","GET"},
+		}))
 
 	r.POST("/sign-up", controllers.SignUp)
 	r.POST("/login", controllers.Login)
