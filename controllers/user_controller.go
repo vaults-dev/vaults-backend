@@ -101,7 +101,7 @@ func Login(c *gin.Context) {
 	}
 
 	// set secure='true' in prod
-	c.SetCookie("token", tokenString, 3600*24*7, "", "", false, true)
+	c.SetCookie("token", tokenString, 3600*24*7, "", "", true, true)
 
 	response.Message = "success login"
 
