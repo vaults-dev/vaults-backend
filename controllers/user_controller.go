@@ -106,6 +106,7 @@ func Login(c *gin.Context) {
 		return
 	}
 
+	c.SetSameSite(http.SameSiteNoneMode)
 	// set secure='true' in prod
 	c.SetCookie("token", tokenString, 3600*24*7, "", "", true, true)
 
