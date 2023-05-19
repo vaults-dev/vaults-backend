@@ -24,7 +24,7 @@ func main() {
 	// 	}))
 
 	config := cors.DefaultConfig()
-	config.AllowAllOrigins = true
+	config.AllowOrigins = []string{"http://localhost:3000"}
 	config.AllowCredentials = true
 	r.Use(cors.New(config))
 
