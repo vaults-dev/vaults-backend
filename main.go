@@ -19,7 +19,7 @@ func main() {
 	r.Use(cors.New(
 		cors.Config{
 			AllowAllOrigins: true,
-			// AllowMethods: []string{"POST","GET"},
+			AllowMethods:    []string{"POST", "GET", "PUT", "OPTIONS"},
 		}))
 
 	r.POST("/sign-up", controllers.SignUp)
