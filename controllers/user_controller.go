@@ -3,13 +3,11 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/vaults-dev/vaults-backend/constants"
 	"github.com/vaults-dev/vaults-backend/initializers"
 	"github.com/vaults-dev/vaults-backend/models"
+	"github.com/vaults-dev/vaults-backend/utils"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -49,8 +47,7 @@ func SignUp(c *gin.Context) {
 
 	response.Message = "success register"
 
-	c.JSON(http.StatusCreated, gin.H{})
-
+	c.JSON(http.StatusCreated, response)
 }
 
 func Login(c *gin.Context) {
@@ -89,28 +86,20 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	// Create a new token object, specifying signing method and the claims
-	// you would like it to contain.
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": user.Email,
-		// "exp": time.Now().Add(time.Second * 5).Unix(),
-		"exp": time.Now().Add(time.Hour * 24 * 7).Unix(),
-	})
-
-	// Sign and get the complete encoded token as a string using the secret
-	tokenString, err := token.SignedString([]byte(constants.SECRETE_KEY))
+	jwt, err := utils.GenerateTokenForUser(user.Email)
 	if err != nil {
-		response.Error = fmt.Sprintf("failed signing jwt, %v", err.Error())
+		response.Error = fmt.Sprintf("failed generate jwt, %v", err.Error())
 		c.JSON(http.StatusInternalServerError, response)
 
 		return
 	}
 
-	c.SetSameSite(http.SameSiteNoneMode)
-	// set secure='true' in prod
-	c.SetCookie("token", tokenString, 3600*24*7, "", "", true, true)
-
 	response.Message = "success login"
+	response.Data = struct {
+		Jwt string `json:"jwt"`
+	}{
+		Jwt: string(jwt),
+	}
 
 	c.JSON(http.StatusOK, response)
 }

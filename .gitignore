@@ -3,3 +3,8 @@
 *.exe
 *.env
 .DS_Store
+
+private.key
+private.pem
+public.key
+public.pem
