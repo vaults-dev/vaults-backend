@@ -24,7 +24,8 @@ func init() {
 	initializers.GenerateJwk()
 
 	controllers.GoogleOauthConfig = &oauth2.Config{
-		RedirectURL:  "http://localhost:8080/google/callback",
+		RedirectURL: "http://vaults-backend-production.up.railway.app/google/callback",
+		// RedirectURL:  "http://localhost:8080/google/callback",
 		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
 		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
