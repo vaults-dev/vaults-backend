@@ -56,7 +56,16 @@ func GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	fmt.Fprintf(c.Writer, "JWT:%s\n\n\n Content: %+v\n", string(jwt), googleResp)
+	response := models.Response{
+		Message: "success login",
+		Data: struct {
+			Jwt string `json:"jwt"`
+		}{
+			Jwt: string(jwt),
+		},
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func getUserInfo(state string, code string) (models.GoogleOAuthResponse, error) {
