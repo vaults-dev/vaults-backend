@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/vaults-dev/vaults-backend/constants"
-	"github.com/vaults-dev/vaults-backend/initializers"
 	"github.com/vaults-dev/vaults-backend/models"
 )
 
@@ -42,12 +41,12 @@ func ValidateAuth(c *gin.Context) {
 		}
 
 		var user models.User
-		initializers.DBconn.First(&user, "email=?", claims["sub"])
-		if user.Email == "" {
-			response.Error = "cookie data not valid, please login again"
-			c.AbortWithStatusJSON(http.StatusUnauthorized, response)
-			return
-		}
+		// initializers.DBconn.First(&user, "email=?", claims["sub"])
+		// if user.Email == "" {
+		// 	response.Error = "cookie data not valid, please login again"
+		// 	c.AbortWithStatusJSON(http.StatusUnauthorized, response)
+		// 	return
+		// }
 
 		c.Set("user", user)
 

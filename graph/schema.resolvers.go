@@ -7,11 +7,8 @@ package graph
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/vaults-dev/vaults-backend/graph/model"
-	"github.com/vaults-dev/vaults-backend/initializers"
-	dbModel "github.com/vaults-dev/vaults-backend/models"
 )
 
 // Login is the resolver for the login field.
@@ -26,23 +23,25 @@ func (r *mutationResolver) SignUp(ctx context.Context, input model.SignUp) (*mod
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	intId, err := strconv.Atoi(id)
-	if err != nil {
-		return nil, err
-	}
+	// intId, err := strconv.Atoi(id)
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	var user dbModel.User
-	initializers.DBconn.First(&user, "id=?", intId)
+	// var user dbModel.User
+	// initializers.DBconn.First(&user, "id=?", intId)
 
-	userResp := model.User{
-		ID:        strconv.Itoa(int(user.ID)),
-		Name:      user.Name,
-		Email:     user.Email,
-		CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05-0700"),
-		UpdatedAt: user.CreatedAt.Format("2006-01-02T15:04:05-0700"),
-	}
+	// userResp := model.User{
+	// 	ID:        strconv.Itoa(int(user.ID)),
+	// 	Name:      user.Name,
+	// 	Email:     user.Email,
+	// 	CreatedAt: user.CreatedAt.Format("2006-01-02T15:04:05-0700"),
+	// 	UpdatedAt: user.CreatedAt.Format("2006-01-02T15:04:05-0700"),
+	// }
 
-	return &userResp, nil
+	// return &userResp, nil
+
+	return nil, nil
 }
 
 // Mutation returns MutationResolver implementation.

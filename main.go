@@ -8,6 +8,8 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/vaults-dev/vaults-backend/controllers"
 	"github.com/vaults-dev/vaults-backend/initializers"
+	"github.com/vaults-dev/vaults-backend/libraries"
+	"github.com/vaults-dev/vaults-backend/repositories"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 
@@ -20,7 +22,6 @@ func init() {
 	// Load .env file
 	godotenv.Load()
 
-	initializers.ConnectDB()
 	initializers.GenerateJwk()
 
 	controllers.GoogleOauthConfig = &oauth2.Config{
@@ -54,6 +55,15 @@ func playgroundHandler() gin.HandlerFunc {
 }
 
 func main() {
+	// mysql
+	gormDB := initializers.MysqlConnectDB()
+	initializers.MigrateTable(gormDB)
+
+	// repository
+	userRepo := repositories.NewUserRepository(gormDB)
+	userLib := libraries.NewUserLibrary(userRepo)
+	userCtrl := controllers.NewUserController(userLib)
+
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
@@ -65,8 +75,8 @@ func main() {
 	r.POST("/query", graphqlHandler())
 
 	r.GET("/jwk", controllers.GetJwk)
-	r.POST("/sign-up", controllers.SignUp)
-	r.POST("/login", controllers.Login)
+	r.POST("/sign-up", userCtrl.SignUp)
+	r.POST("/login", userCtrl.Login)
 	r.GET("/login-page", controllers.LoginPage)
 	r.GET("/google-oauth", controllers.GoogleOAuth)
 	r.GET("/google/callback", controllers.GoogleCallback)

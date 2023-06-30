@@ -5,13 +5,27 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/vaults-dev/vaults-backend/initializers"
+	"github.com/vaults-dev/vaults-backend/libraries"
 	"github.com/vaults-dev/vaults-backend/models"
-	"github.com/vaults-dev/vaults-backend/utils"
-	"golang.org/x/crypto/bcrypt"
 )
 
-func SignUp(c *gin.Context) {
+type UserController struct {
+	lib libraries.UserLibraryInterface
+}
+
+type UserControllerInterface interface {
+	SignUp(c *gin.Context)
+	Login(c *gin.Context)
+	Home(c *gin.Context)
+}
+
+func NewUserController(lib libraries.UserLibraryInterface) UserControllerInterface {
+	return &UserController{
+		lib: lib,
+	}
+}
+
+func (ctrl *UserController) SignUp(c *gin.Context) {
 	request := models.SignUp{}
 	response := models.Response{}
 
@@ -23,40 +37,13 @@ func SignUp(c *gin.Context) {
 		return
 	}
 
-	hashPass, err := bcrypt.GenerateFromPassword([]byte(request.Password), 10)
-	if err != nil {
-		response.Error = fmt.Sprintf("failed generate hash, %v", err.Error())
-		c.JSON(http.StatusInternalServerError, response)
-
-		return
-	}
-
-	user := models.User{
-		Name:     request.Name,
-		Email:    request.Email,
-		Password: string(hashPass),
-	}
-
-	result := initializers.DBconn.Create(&user)
-	if result.Error != nil {
-		response.Error = fmt.Sprintf("failed create user to db, %v", result.Error.Error())
-		c.JSON(http.StatusInternalServerError, response)
-
-		return
-	}
-
+	response.Error = ctrl.lib.SignUp(request)
 	response.Message = "success register"
 
 	c.JSON(http.StatusCreated, response)
 }
 
-func Login(c *gin.Context) {
-
-	// c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
-	// c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
-	// c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
-	// c.Writer.Header().Set("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT")
-
+func (ctrl *UserController) Login(c *gin.Context) {
 	request := models.Login{}
 	response := models.Response{}
 
@@ -68,28 +55,10 @@ func Login(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-
-	initializers.DBconn.First(&user, "email=?", request.Email)
-	if user.Email == "" {
-		response.Error = fmt.Sprintf("wrong email or pass")
-		c.JSON(http.StatusBadRequest, response)
-
-		return
-	}
-
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password))
+	jwt, err := ctrl.lib.Login(request)
 	if err != nil {
-		response.Error = fmt.Sprintf("wrong email or pass")
+		response.Error = err
 		c.JSON(http.StatusBadRequest, response)
-
-		return
-	}
-
-	jwt, err := utils.GenerateTokenForUser(user.Email)
-	if err != nil {
-		response.Error = fmt.Sprintf("failed generate jwt, %v", err.Error())
-		c.JSON(http.StatusInternalServerError, response)
 
 		return
 	}
@@ -98,13 +67,13 @@ func Login(c *gin.Context) {
 	response.Data = struct {
 		Jwt string `json:"jwt"`
 	}{
-		Jwt: string(jwt),
+		Jwt: jwt.(string),
 	}
 
 	c.JSON(http.StatusOK, response)
 }
 
-func Home(c *gin.Context) {
+func (ctrl *UserController) Home(c *gin.Context) {
 	var response models.Response
 
 	userData, exist := c.Get("user")
