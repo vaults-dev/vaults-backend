@@ -1,11 +1,15 @@
 package main
 
 import (
+	"os"
+
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/vaults-dev/vaults-backend/controllers"
 	"github.com/vaults-dev/vaults-backend/initializers"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -18,6 +22,14 @@ func init() {
 
 	initializers.ConnectDB()
 	initializers.GenerateJwk()
+
+	controllers.GoogleOauthConfig = &oauth2.Config{
+		RedirectURL:  "http://localhost:8080/google/callback",
+		ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+		ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+		Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email"},
+		Endpoint:     google.Endpoint,
+	}
 }
 
 // Defining the Graphql handler
@@ -54,6 +66,10 @@ func main() {
 	r.GET("/jwk", controllers.GetJwk)
 	r.POST("/sign-up", controllers.SignUp)
 	r.POST("/login", controllers.Login)
+	r.GET("/login-page", controllers.LoginPage)
+	r.GET("/google-oauth", controllers.GoogleOAuth)
+	r.GET("/google/callback", controllers.GoogleCallback)
+
 	// r.GET("/home", middlewares.ValidateAuth, controllers.Home)
 	r.Run() // listen and serve on 0.0.0.0:8080
 }
