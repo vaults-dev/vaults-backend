@@ -56,16 +56,19 @@ func GoogleCallback(c *gin.Context) {
 		return
 	}
 
-	response := models.Response{
-		Message: "success login",
-		Data: struct {
-			Jwt string `json:"jwt"`
-		}{
-			Jwt: string(jwt),
-		},
-	}
+	// response := models.Response{
+	// 	Message: "success login",
+	// 	Data: struct {
+	// 		Jwt string `json:"jwt"`
+	// 	}{
+	// 		Jwt: string(jwt),
+	// 	},
+	// }
 
-	c.JSON(http.StatusOK, response)
+	// c.JSON(http.StatusOK, response)
+
+	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/?jwt=%v", string(jwt)), http.StatusTemporaryRedirect)
+
 }
 
 func getUserInfo(state string, code string) (models.GoogleOAuthResponse, error) {
