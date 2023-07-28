@@ -26,8 +26,23 @@ input Login {
 type Mutation {
   login(input: Login!): User!
   signUp(input: SignUp!): User!
+  createWallet(input: CreateWalletPayload!): Wallet!
 }
 
 type Query {
   getUser(id: ID!): User
 }
+
+input CreateWalletPayload {
+  owner_address: String!
+  salt: Int! # Index of the wallet
+  network_id: String!
+}
+
+type Wallet {
+  address: String!
+  owner_address: String!
+  salt: Int! # Index of the wallet
+  network_id: String!
+}
+

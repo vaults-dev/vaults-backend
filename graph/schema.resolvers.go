@@ -21,6 +21,16 @@ func (r *mutationResolver) SignUp(ctx context.Context, input model.SignUp) (*mod
 	panic(fmt.Errorf("not implemented: SignUp - signUp"))
 }
 
+// CreateWallet is the resolver for the createWallet field.
+func (r *mutationResolver) CreateWallet(ctx context.Context, input model.CreateWalletPayload) (*model.Wallet, error) {
+  wallet, err := r.WalletRepository.CreateWallet(input)
+  if err != nil {
+    return nil, err
+  }
+
+  return wallet, nil
+}
+
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
 	// intId, err := strconv.Atoi(id)

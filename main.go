@@ -35,10 +35,12 @@ func init() {
 }
 
 // Defining the Graphql handler
-func graphqlHandler() gin.HandlerFunc {
+func graphqlHandler(walletRepo *repositories.WalletRepository) gin.HandlerFunc {
 	// NewExecutableSchema and Config are in the generated.go file
 	// Resolver is in the resolver.go file
-	h := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+  h := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+    WalletRepository: walletRepo,
+  }}))
 
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
@@ -64,6 +66,8 @@ func main() {
 	userLib := libraries.NewUserLibrary(userRepo)
 	userCtrl := controllers.NewUserController(userLib)
 
+  walletRepo := repositories.NewWalletRepository(gormDB)
+
 	r := gin.Default()
 
 	config := cors.DefaultConfig()
@@ -72,7 +76,7 @@ func main() {
 	r.Use(cors.New(config))
 
 	r.GET("/", playgroundHandler())
-	r.POST("/query", graphqlHandler())
+	r.POST("/query", graphqlHandler(walletRepo))
 
 	r.GET("/jwk", controllers.GetJwk)
 	r.POST("/sign-up", userCtrl.SignUp)
