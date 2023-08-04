@@ -4,8 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"math/big"
+	"os"
 	"time"
 
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
@@ -13,6 +13,8 @@ import (
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"github.com/vaults-dev/vaults-backend/graph/model"
+	gqlModel "github.com/vaults-dev/vaults-backend/graph/model"
+	"github.com/vaults-dev/vaults-backend/models"
 	"github.com/vaults-dev/vaults-backend/web3/smart_contracts"
 	"gorm.io/gorm"
 )
@@ -35,31 +37,44 @@ func (r *WalletRepository) CreateWallet(input model.CreateWalletPayload) (*model
   // the RPC url should be part of Networks table 
   // The network is fetched using input.NetworkID
 
-  rpcUrl := "https://eth-sepolia.blastapi.io/4c042713-b83d-4a24-a6bf-41e20b08b216"
-	client, err := ethclient.Dial(rpcUrl)
+  var bcNetwork models.BlockchainNetwork
+  err := r.db.First(&bcNetwork).Where("id = ?", input.NetworkID).Error
+  if err != nil {
+    return nil, err
+  }
+
+  fmt.Println(bcNetwork.RpcUrl)
+
+  // rpcUrl := "https://eth-sepolia.blastapi.io/4c042713-b83d-4a24-a6bf-41e20b08b216"
+	client, err := ethclient.Dial(bcNetwork.RpcUrl)
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	factoryContractAddress := common.HexToAddress(VAULTS_WALLET_FACTORY_CONTRACT_ADDRESS)
 	walletFactory, err := smart_contracts.NewVaultsWalletFactory(factoryContractAddress, client)
 	if err != nil {
-		log.Fatal(err)
+    return nil, err
 	}
 
-	privateKey, err := crypto.HexToECDSA(EOA_PRIVATE_KEY)
+  privKeyString := os.Getenv("RELAYER_WALLET_PRIVATE_KEY")
+  if privKeyString == "" {
+    return nil, errors.New("RELAYER_WALLET_PRIVATE_KEY is not set")
+  }
+
+	privateKey, err := crypto.HexToECDSA(privKeyString)
 	if err != nil {
-		log.Fatal(err)
+    return nil, err
 	}
 
 	chainID, err := client.ChainID(context.Background())
 	if err != nil {
-		log.Fatal(err)
+    return nil, err
 	}
 
 	auth, err := bind.NewKeyedTransactorWithChainID(privateKey, chainID)
 	if err != nil {
-		log.Fatal(err)
+    return nil, err
 	}
 
   ownerAddress := common.HexToAddress(input.OwnerAddress)
@@ -73,9 +88,8 @@ func (r *WalletRepository) CreateWallet(input model.CreateWalletPayload) (*model
 	// Get the account address created
 	createdAccountAddress, err := walletFactory.GetAddress(nil, ownerAddress, salt)
 	if err != nil {
-		log.Fatal(err)
+    return nil, err
 	}
-  fmt.Println("createdAccountAddress.Hex()", createdAccountAddress.Hex())
 
 	maxRetries := 5
 	retries := 0
@@ -92,18 +106,23 @@ func (r *WalletRepository) CreateWallet(input model.CreateWalletPayload) (*model
       continue
     }
 		if txReceipt.Status == 1 {
-      // Transaction was successful
-      err = r.db.Create(&model.Wallet{
+      wallet := models.Wallet{
         Address:     createdAccountAddress.Hex(),
         OwnerAddress: input.OwnerAddress,
         Salt:        input.Salt,
         NetworkID:   input.NetworkID,
-      }).Error
+      }
+      // Transaction was successful
+      err = r.db.
+        Where("address = ?", createdAccountAddress.Hex()).
+        Where("network_id = ?", input.NetworkID).
+        FirstOrCreate(&wallet).
+        Error
       if err != nil {
         return nil, err
       }
 
-      return &model.Wallet{
+      return &gqlModel.Wallet{
         Address:     createdAccountAddress.Hex(),
         OwnerAddress: input.OwnerAddress,
         Salt:        input.Salt,
