@@ -2,6 +2,12 @@
 
 package model
 
+type CreateWalletPayload struct {
+	OwnerAddress string `json:"owner_address"`
+	Salt         int    `json:"salt"`
+	NetworkID    string `json:"network_id"`
+}
+
 type Login struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
@@ -21,4 +27,11 @@ type User struct {
 	CreatedAt string  `json:"created_at"`
 	UpdatedAt string  `json:"updated_at"`
 	DeletedAt *string `json:"deleted_at,omitempty"`
+}
+
+type Wallet struct {
+	Address      string `json:"address"`
+	OwnerAddress string `json:"owner_address"`
+	Salt         int    `json:"salt"`
+	NetworkID    string `json:"network_id"`
 }

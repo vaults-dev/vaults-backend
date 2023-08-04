@@ -19,4 +19,6 @@ func MysqlConnectDB() *gorm.DB {
 
 func MigrateTable(gormDB *gorm.DB) {
 	gormDB.AutoMigrate(&models.User{})
+  gormDB.AutoMigrate(&models.Wallet{})
+  gormDB.AutoMigrate(&models.BlockchainNetwork{})
 }
