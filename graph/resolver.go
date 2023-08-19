@@ -6,6 +6,6 @@ import "github.com/vaults-dev/vaults-backend/repositories"
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
-type Resolver struct{
-  WalletRepository *repositories.WalletRepository
+type Resolver struct {
+	WalletRepository *repositories.WalletRepository
 }

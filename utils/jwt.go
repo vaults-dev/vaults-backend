@@ -29,6 +29,7 @@ func GenerateTokenForUser(email string) ([]byte, error) {
 		"email": email,
 		"iss":   "https://vaults.dev",
 		"exp":   expiry,
+		"iat":   time.Now().Unix(),
 	})
 	jwtToken.Header["kid"] = jwkKey.Kid
 	jwtToken.Header["alg"] = jwt.SigningMethodRS256.Name

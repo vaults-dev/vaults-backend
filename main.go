@@ -38,9 +38,9 @@ func init() {
 func graphqlHandler(walletRepo *repositories.WalletRepository) gin.HandlerFunc {
 	// NewExecutableSchema and Config are in the generated.go file
 	// Resolver is in the resolver.go file
-  h := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
-    WalletRepository: walletRepo,
-  }}))
+	h := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		WalletRepository: walletRepo,
+	}}))
 
 	return func(c *gin.Context) {
 		h.ServeHTTP(c.Writer, c.Request)
@@ -66,7 +66,7 @@ func main() {
 	userLib := libraries.NewUserLibrary(userRepo)
 	userCtrl := controllers.NewUserController(userLib)
 
-  walletRepo := repositories.NewWalletRepository(gormDB)
+	walletRepo := repositories.NewWalletRepository(gormDB)
 
 	r := gin.Default()
 

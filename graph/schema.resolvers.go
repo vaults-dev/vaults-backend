@@ -23,12 +23,12 @@ func (r *mutationResolver) SignUp(ctx context.Context, input model.SignUp) (*mod
 
 // CreateWallet is the resolver for the createWallet field.
 func (r *mutationResolver) CreateWallet(ctx context.Context, input model.CreateWalletPayload) (*model.Wallet, error) {
-  wallet, err := r.WalletRepository.CreateWallet(input)
-  if err != nil {
-    return nil, err
-  }
+	wallet, err := r.WalletRepository.CreateWallet(input)
+	if err != nil {
+		return nil, err
+	}
 
-  return wallet, nil
+	return wallet, nil
 }
 
 // GetUser is the resolver for the getUser field.
