@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/vaults-dev/vaults-backend/libraries"
 	"github.com/vaults-dev/vaults-backend/models"
 )
@@ -55,7 +56,7 @@ func (ctrl *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	jwt, err := ctrl.lib.Login(request)
+	userUUID, jwt, err := ctrl.lib.Login(request)
 	if err != nil {
 		response.Error = err
 		c.JSON(http.StatusBadRequest, response)
@@ -65,9 +66,11 @@ func (ctrl *UserController) Login(c *gin.Context) {
 
 	response.Message = "success login"
 	response.Data = struct {
-		Jwt string `json:"jwt"`
+		UUID uuid.UUID `json:"uuid"`
+		Jwt  string    `json:"jwt"`
 	}{
-		Jwt: jwt.(string),
+		Jwt:  jwt,
+		UUID: userUUID,
 	}
 
 	c.JSON(http.StatusOK, response)

@@ -28,14 +28,12 @@ type JwkKey struct {
 }
 
 func GetJwk() (*JwkKey, error) {
-	privPemBytes, err := os.ReadFile("private.pem")
-	if err != nil {
-		return nil, err
-	}
+	privPemStr := os.Getenv("PRIVATE_KEY_PEM")
+	privPemBytes := []byte(privPemStr)
 
 	block, _ := pem.Decode([]byte(string(privPemBytes)))
 	if block == nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to parse PEM block containing the key")
 	}
 
 	rsaKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
@@ -104,7 +102,7 @@ func savePEMKey(fileName string, key *rsa.PrivateKey) error {
 	}
 	defer outFile.Close()
 
-	var privateKey = &pem.Block{
+	privateKey := &pem.Block{
 		Type:  "PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(key),
 	}
@@ -123,7 +121,7 @@ func savePublicPEMKey(fileName string, pubkey rsa.PublicKey) error {
 		return err
 	}
 
-	var pemkey = &pem.Block{
+	pemkey := &pem.Block{
 		Type:  "PUBLIC KEY",
 		Bytes: asn1Bytes,
 	}

@@ -10,7 +10,7 @@ type UserRepository struct {
 }
 
 type UserRepositoryInterface interface {
-	CreateUser(user *models.User) error
+	CreateUser(user *models.User) (models.User, error)
 	GetUserByEmail(email string) (models.User, error)
 }
 
@@ -20,14 +20,13 @@ func NewUserRepository(gorm *gorm.DB) UserRepositoryInterface {
 	}
 }
 
-func (r *UserRepository) CreateUser(user *models.User) error {
-
+func (r *UserRepository) CreateUser(user *models.User) (models.User, error) {
 	err := r.gorm.Create(user).Error
 	if err != nil {
 		// TODO LOGGER
 	}
 
-	return err
+	return *user, err
 }
 
 func (r *UserRepository) GetUserByEmail(email string) (models.User, error) {

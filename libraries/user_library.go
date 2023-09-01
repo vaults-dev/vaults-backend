@@ -3,6 +3,7 @@ package libraries
 import (
 	"fmt"
 
+	"github.com/google/uuid"
 	"github.com/vaults-dev/vaults-backend/models"
 	"github.com/vaults-dev/vaults-backend/repositories"
 	"github.com/vaults-dev/vaults-backend/utils"
@@ -15,7 +16,9 @@ type UserLibrary struct {
 
 type UserLibraryInterface interface {
 	SignUp(params models.SignUp) error
-	Login(params models.Login) (interface{}, error)
+	Login(params models.Login) (uuid.UUID, string, error)
+	CreateUser(user *models.User) (models.User, error)
+	GetUserByEmail(email string) (models.User, error)
 }
 
 func NewUserLibrary(repo repositories.UserRepositoryInterface) UserLibraryInterface {
@@ -36,7 +39,7 @@ func (l *UserLibrary) SignUp(request models.SignUp) error {
 		Password: string(hashPass),
 	}
 
-	err = l.repo.CreateUser(&user)
+	user, err = l.repo.CreateUser(&user)
 	if err != nil {
 		return fmt.Errorf("failed create user to db, %v", err.Error())
 	}
@@ -44,21 +47,29 @@ func (l *UserLibrary) SignUp(request models.SignUp) error {
 	return nil
 }
 
-func (l *UserLibrary) Login(request models.Login) (interface{}, error) {
+func (l *UserLibrary) Login(request models.Login) (uuid.UUID, string, error) {
 	user, _ := l.repo.GetUserByEmail(request.Email)
 	if user.Email == "" {
-		return nil, fmt.Errorf("wrong email or pass")
+		return uuid.Nil, "", fmt.Errorf("wrong email or pass")
 	}
 
 	err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(request.Password))
 	if err != nil {
-		return nil, fmt.Errorf("wrong email or pass")
+		return uuid.Nil, "", fmt.Errorf("wrong email or pass")
 	}
 
-	jwt, err := utils.GenerateTokenForUser(user.Email)
+	jwt, err := utils.GenerateTokenForUser(user.Email, user.UUID)
 	if err != nil {
-		return nil, fmt.Errorf("failed generate jwt, %v", err.Error())
+		return uuid.Nil, "", fmt.Errorf("failed generate jwt, %v", err.Error())
 	}
 
-	return string(jwt), nil
+	return user.UUID, string(jwt), nil
+}
+
+func (l *UserLibrary) CreateUser(user *models.User) (models.User, error) {
+	return l.repo.CreateUser(user)
+}
+
+func (l *UserLibrary) GetUserByEmail(email string) (models.User, error) {
+	return l.repo.GetUserByEmail(email)
 }

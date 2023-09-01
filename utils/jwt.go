@@ -4,14 +4,10 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
-type UserClaims struct {
-	Sub string `json:"sub"`
-	Iss string `json:"iss"`
-}
-
-func GenerateTokenForUser(email string) ([]byte, error) {
+func GenerateTokenForUser(email string, uuid uuid.UUID) ([]byte, error) {
 	rsaKey, err := GetRsaPrivateKey()
 	if err != nil {
 		return nil, err
@@ -26,6 +22,7 @@ func GenerateTokenForUser(email string) ([]byte, error) {
 	expiry := time.Now().Add(time.Hour * 24 * 7).Unix()
 
 	jwtToken := jwt.NewWithClaims(jwt.SigningMethodRS256, jwt.MapClaims{
+		"sub":   uuid.String(),
 		"email": email,
 		"iss":   "https://vaults.dev",
 		"exp":   expiry,

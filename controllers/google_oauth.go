@@ -2,15 +2,18 @@ package controllers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/vaults-dev/vaults-backend/libraries"
 	"github.com/vaults-dev/vaults-backend/models"
 	"github.com/vaults-dev/vaults-backend/utils"
+	"gorm.io/gorm"
 
 	"golang.org/x/oauth2"
 )
@@ -21,8 +24,16 @@ var (
 	oauthStateString = "pseudo-random"
 )
 
-func LoginPage(c *gin.Context) {
-	var htmlIndex = `<html>
+type GoogleOAuthController struct {
+	userLib libraries.UserLibraryInterface
+}
+
+func NewGoogleOAuthController(userLib libraries.UserLibraryInterface) *GoogleOAuthController {
+	return &GoogleOAuthController{userLib}
+}
+
+func (g *GoogleOAuthController) LoginPage(c *gin.Context) {
+	htmlIndex := `<html>
 <body>
 	<a href="/google-oauth">Google Log In</a>
 </body>
@@ -31,7 +42,7 @@ func LoginPage(c *gin.Context) {
 	fmt.Fprintf(c.Writer, htmlIndex)
 }
 
-func GoogleOAuth(c *gin.Context) {
+func (g *GoogleOAuthController) GoogleOAuth(c *gin.Context) {
 	log.Println("-----------------------------------")
 	log.Printf("GOOGLE CONFIG %+v\n", GoogleOauthConfig)
 	ClientID := os.Getenv("GOOGLE_CLIENT_ID")
@@ -41,15 +52,36 @@ func GoogleOAuth(c *gin.Context) {
 	http.Redirect(c.Writer, c.Request, url, http.StatusTemporaryRedirect)
 }
 
-func GoogleCallback(c *gin.Context) {
-	googleResp, err := getUserInfo(c.Request.FormValue("state"), c.Request.FormValue("code"))
+func (g *GoogleOAuthController) GoogleCallback(c *gin.Context) {
+	googleResp, err := g.getUserInfo(c.Request.FormValue("state"), c.Request.FormValue("code"))
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Redirect(c.Writer, c.Request, "/login-page", http.StatusTemporaryRedirect)
 		return
 	}
 
-	jwt, err := utils.GenerateTokenForUser(googleResp.Email)
+	user, err := g.userLib.GetUserByEmail(googleResp.Email)
+	// If user not found, create new user
+	if err != nil && errors.Is(err, gorm.ErrRecordNotFound) {
+		user, err = g.userLib.CreateUser(&models.User{
+			Email: googleResp.Email,
+		})
+		if err != nil {
+			fmt.Println("g.userLib.CreateUser() error: ", err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": fmt.Sprintf("google login error", err.Error()),
+			})
+			return
+		}
+	} else if err != nil {
+		fmt.Println("g.userLib.GetUserByEmail() error: ", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": fmt.Sprintf("google login error", err.Error()),
+		})
+		return
+	}
+
+	jwt, err := utils.GenerateTokenForUser(googleResp.Email, user.UUID)
 	if err != nil {
 		fmt.Println(err.Error())
 		http.Redirect(c.Writer, c.Request, "/login-page", http.StatusTemporaryRedirect)
@@ -68,10 +100,9 @@ func GoogleCallback(c *gin.Context) {
 	// c.JSON(http.StatusOK, response)
 
 	http.Redirect(c.Writer, c.Request, fmt.Sprintf("/?jwt=%v", string(jwt)), http.StatusTemporaryRedirect)
-
 }
 
-func getUserInfo(state string, code string) (models.GoogleOAuthResponse, error) {
+func (g *GoogleOAuthController) getUserInfo(state string, code string) (models.GoogleOAuthResponse, error) {
 	googleResp := models.GoogleOAuthResponse{}
 
 	if state != oauthStateString {
@@ -89,7 +120,7 @@ func getUserInfo(state string, code string) (models.GoogleOAuthResponse, error) 
 	}
 
 	defer response.Body.Close()
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return googleResp, fmt.Errorf("failed reading response body: %s", err.Error())
 	}

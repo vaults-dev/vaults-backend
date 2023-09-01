@@ -22,8 +22,6 @@ func init() {
 	// Load .env file
 	godotenv.Load()
 
-	initializers.GenerateJwk()
-
 	controllers.GoogleOauthConfig = &oauth2.Config{
 		RedirectURL: "https://vaults-backend-production.up.railway.app/google/callback",
 		// RedirectURL:  "http://localhost:8080/google/callback",
@@ -66,6 +64,8 @@ func main() {
 	userLib := libraries.NewUserLibrary(userRepo)
 	userCtrl := controllers.NewUserController(userLib)
 
+	googlOAuthCtrl := controllers.NewGoogleOAuthController(userLib)
+
 	walletRepo := repositories.NewWalletRepository(gormDB)
 
 	r := gin.Default()
@@ -81,9 +81,9 @@ func main() {
 	r.GET("/jwk", controllers.GetJwk)
 	r.POST("/sign-up", userCtrl.SignUp)
 	r.POST("/login", userCtrl.Login)
-	r.GET("/login-page", controllers.LoginPage)
-	r.GET("/google-oauth", controllers.GoogleOAuth)
-	r.GET("/google/callback", controllers.GoogleCallback)
+	r.GET("/login-page", googlOAuthCtrl.LoginPage)
+	r.GET("/google-oauth", googlOAuthCtrl.GoogleOAuth)
+	r.GET("/google/callback", googlOAuthCtrl.GoogleCallback)
 
 	// r.GET("/home", middlewares.ValidateAuth, controllers.Home)
 	r.Run() // listen and serve on 0.0.0.0:8080
